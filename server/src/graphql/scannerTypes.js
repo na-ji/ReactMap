@@ -13,6 +13,21 @@ module.exports = gql`
     radius: Int
   }
 
+  type Defenders {
+    trainer: String
+    deployed: Int
+    current_cp: Int
+    total_cp: Int
+    iv: Float
+    gym_id: ID
+    pokemon_id: Int
+    form: Int
+    costume: Int
+    gender: Int
+    nickname: String
+    is_shiny: Boolean
+  }
+
   type Gym {
     id: ID
     lat: Float
@@ -47,6 +62,7 @@ module.exports = gql`
     power_up_level: Int
     power_up_points: Int
     power_up_end_timestamp: Int
+    defenders: [Defenders]
   }
 
   type Nest {

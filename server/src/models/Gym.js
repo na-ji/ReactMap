@@ -33,6 +33,7 @@ const gymFields = [
   'power_up_points',
   'power_up_level',
   'power_up_end_timestamp',
+  'defenders',
 ]
 
 const raidFields = [
@@ -323,11 +324,53 @@ module.exports = class Gym extends Model {
       return []
     }
 
-    const secondaryFilter = (queryResults) => {
+    const secondaryFilter = async (queryResults) => {
       const filteredResults = []
       const userBadgeObj = Object.fromEntries(
         userBadges.map((b) => [b.gymId, b.badge]),
       )
+
+      const shouldQueryGymDefenders = isMad
+      let defenders = []
+
+      if (shouldQueryGymDefenders) {
+        defenders = await this.query()
+          .select([
+            'gym_pokemon.trainer',
+            raw('UNIX_TIMESTAMP(gym_pokemon.deployed)').as('deployed'),
+            'gym_pokemon.cp_now AS current_cp',
+            'gym_pokemon.gym_id',
+            'trainer_pokemon.pokemon_id',
+            'trainer_pokemon.nickname',
+            'trainer_pokemon.gender',
+            'trainer_pokemon.form',
+            'trainer_pokemon.costume',
+            'trainer_pokemon.is_shiny',
+            'trainer_pokemon.cp as total_cp',
+            raw(
+              'IFNULL((trainer_pokemon.iv_attack + trainer_pokemon.iv_defense + trainer_pokemon.iv_stamina) / 0.45, NULL)',
+            ).as('iv'),
+          ])
+          .from('cev_gympokemon AS gym_pokemon')
+          .leftJoin(
+            'cev_trainer_pokemon AS trainer_pokemon',
+            'trainer_pokemon.uuid',
+            'gym_pokemon.pokemon_uuid',
+          )
+          .whereIn(
+            ['gym_pokemon.gym_id', 'gym_pokemon.last_seen'],
+            this.query()
+              .select(['gym_id'])
+              .max('last_seen')
+              .from('cev_gympokemon')
+              .whereIn(
+                'gym_id',
+                queryResults.map((gym) => gym.id),
+              )
+              .groupBy(['gym_id']),
+          )
+          .orderBy('gym_pokemon.deployed', 'DESC')
+      }
 
       queryResults.forEach((gym) => {
         const newGym = Object.fromEntries(
@@ -336,12 +379,19 @@ module.exports = class Gym extends Model {
         const isRaid = gym.raid_end_timestamp > safeTs
         const isEgg = isRaid && !gym.raid_pokemon_id
 
+        gym.defenders = []
+
         if (userBadgeObj[gym.id]) {
           newGym.badge = userBadgeObj[gym.id]
         }
         if (gymPerms) {
           if (gym.availble_slots !== undefined) {
             gym.available_slots = gym.availble_slots
+          }
+          if (shouldQueryGymDefenders && gym.available_slots < 6) {
+            gym.defenders = defenders.filter(
+              (defender) => defender.gym_id === gym.id,
+            )
           }
           if (gym.updated > Date.now() / 1000 - gymValidDataLimit * 86400) {
             gymFields.forEach((field) => (newGym[field] = gym[field]))

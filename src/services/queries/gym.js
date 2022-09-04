@@ -25,6 +25,18 @@ const gym = gql`
     power_up_level
     power_up_points
     power_up_end_timestamp
+    defenders {
+      costume
+      current_cp
+      deployed
+      form
+      is_shiny
+      iv
+      nickname
+      pokemon_id
+      total_cp
+      trainer
+    }
   }
 `
 

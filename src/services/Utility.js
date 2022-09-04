@@ -5,7 +5,7 @@ import SunCalc from 'suncalc'
 import formatInterval from './functions/formatInterval'
 import getProperName from './functions/getProperName'
 import checkAdvFilter from './functions/checkAdvFilter'
-import dayCheck from './functions/dayCheck'
+import dayCheck, { shortDayCheck } from './functions/dayCheck'
 import parseQuestConditions from './functions/parseConditions'
 import formatter from './functions/formatter'
 
@@ -28,6 +28,10 @@ export default class Utility {
 
   static dayCheck(ts, desiredStamp) {
     return dayCheck(ts, desiredStamp)
+  }
+
+  static shortDayCheck(ts, desiredStamp) {
+    return shortDayCheck(ts, desiredStamp)
   }
 
   static parseConditions(conditions) {

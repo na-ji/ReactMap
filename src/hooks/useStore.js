@@ -79,6 +79,7 @@ export const useStore = create(
         raids: true,
         pvp: false,
         names: true,
+        defenders: false,
       },
       setPopups: (popups) => set({ popups }),
       motdIndex: 0,
